@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Jeu des visages ICM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f9fafb;
+            --muted: #9ca3af;
+            --danger: #f97373;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: radial-gradient(circle at top, #1f2937, #020617);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .app-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 960px;
+            padding: 16px;
+        }
+
+        .card {
+            background: linear-gradient(145deg, #020617, #111827);
+            border-radius: 24px;
+            box-shadow:
+                0 20px 40px rgba(15, 23, 42, 0.8),
+                0 0 0 1px rgba(148, 163, 184, 0.08);
+            padding: 32px 24px 28px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+            .card {
+                padding: 40px 40px 32px;
+            }
+        }
+
+        .glow {
+            position: absolute;
+            inset: -100px;
+            background:
+                radial-gradient(circle at 10% 0, rgba(56, 189, 248, 0.06), transparent 55%),
+                radial-gradient(circle at 90% 100%, rgba(129, 140, 248, 0.1), transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-logo {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            background: conic-gradient(from 180deg, #22d3ee, #6366f1, #22c55e, #22d3ee);
+            padding: 2px;
+        }
+
+        .brand-logo-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            background: #020617;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: #e5e7eb;
+        }
+
+        .brand-text-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .brand-text-sub {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .menu-button {
+            background: rgba(15, 23, 42, 0.8);
+            color: var(--text);
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            padding: 8px 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            backdrop-filter: blur(12px);
+        }
+
+        .menu-button:hover {
+            background: rgba(15, 23, 42, 1);
+            border-color: rgba(129, 140, 248, 0.7);
+        }
+
+        .menu-icon {
+            width: 16px;
+            height: 2px;
+            background: currentColor;
+            border-radius: 999px;
+            position: relative;
+        }
+        .menu-icon::before,
+        .menu-icon::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            width: 16px;
+            height: 2px;
+            background: currentColor;
+            border-radius: 999px;
+        }
+        .menu-icon::before {
+            top: -5px;
+        }
+        .menu-icon::after {
+            top: 5px;
+        }
+
+        /* Menu latéral */
+        .side-menu-backdrop {
+            position: fixed;
+            inset: 0;
+            backdrop-filter: blur(6px);
+            background: rgba(15, 23, 42, 0.7);
+            display: none;
+            align-items: stretch;
+            justify-content: flex-end;
+            z-index: 40;
+        }
+
+        .side-menu-backdrop.open {
+            display: flex;
+        }
+
+        .side-menu {
+            width: 260px;
+            max-width: 80vw;
+            background: #020617;
+            border-left: 1px solid rgba(148, 163, 184, 0.35);
+            padding: 18px 18px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .side-menu-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .menu-section-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-top: 4px;
+            margin-bottom: 6px;
+        }
+
+        .menu-link,
+        .menu-filter-btn {
+            width: 100%;
+            text-align: left;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            padding: 8px 10px;
+            font-size: 14px;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text);
+        }
+
+        .menu-link:hover,
+        .menu-filter-btn:hover {
+            background: rgba(15, 23, 42, 0.9);
+            border-color: rgba(148, 163, 184, 0.5);
+        }
+
+        .menu-filter-btn.active {
+            background: rgba(37, 99, 235, 0.12);
+            border-color: rgba(96, 165, 250, 0.8);
+        }
+
+        .menu-close {
+            align-self: flex-end;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            color: var(--muted);
+            padding: 4px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* Page d'accueil */
+        .home {
+            min-height: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 22px;
+        }
+
+        .home-title {
+            font-size: clamp(26px, 5vw, 32px);
+            font-weight: 700;
+        }
+
+        .home-sub {
+            max-width: 460px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px 40px;
+            border-radius: 999px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #f9fafb;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow:
+                0 16px 30px rgba(37, 99, 235, 0.35),
+                0 0 0 1px rgba(191, 219, 254, 0.3);
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.05);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow:
+                0 10px 18px rgba(37, 99, 235, 0.35),
+                0 0 0 1px rgba(191, 219, 254, 0.3);
+        }
+
+        /* Boutons de modes sur l'accueil */
+        .mode-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            max-width: 520px;
+        }
+
+        .mode-section-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--muted);
+        }
+
+        .mode-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .mode-btn {
+            border-radius: 999px;
+            padding: 7px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid rgba(148, 163, 184, 0.7);
+            background: rgba(15, 23, 42, 0.8);
+            color: var(--text);
+        }
+
+        .mode-btn:hover {
+            background: rgba(15, 23, 42, 1);
+        }
+
+        .mode-btn.active {
+            background: rgba(37, 99, 235, 0.15);
+            border-color: rgba(96, 165, 250, 0.9);
+        }
+
+        /* Zone de jeu */
+        .game {
+            display: none; /* caché au début */
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .game {
+                display: none;
+                grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+                align-items: center;
+            }
+        }
+
+        .game-image-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .portrait-frame {
+            width: min(320px, 70vw);
+            height: min(420px, 82vw);
+            border-radius: 24px;
+            background: radial-gradient(circle at top, #111827, #020617);
+            border: 1px solid rgba(148, 163, 184, 0.7);
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.9);
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .portrait-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 18px;
+            overflow: hidden;
+            background: #020617;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .portrait-inner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .portrait-placeholder {
+            font-size: 80px;
+            opacity: 0.15;
+        }
+
+        .promo-tag {
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .game-info {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .game-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .identity {
+            min-height: 62px;
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px dashed rgba(148, 163, 184, 0.7);
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .identity-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+        }
+
+        .identity-value {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .identity-placeholder {
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .identity-promo {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .game-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn-secondary,
+        .btn-ghost {
+            border-radius: 999px;
+            padding: 10px 18px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid rgba(148, 163, 184, 0.7);
+            background: rgba(15, 23, 42, 0.9);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(30, 64, 175, 0.7);
+            border-color: rgba(129, 140, 248, 0.9);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--muted);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(15, 23, 42, 0.85);
+        }
+
+        .status {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .status strong {
+            color: #e5e7eb;
+        }
+
+        .status.error {
+            color: var(--danger);
+        }
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+    <!-- Menu latéral -->
+    <div id="sideMenuBackdrop" class="side-menu-backdrop" aria-hidden="true">
+        <aside class="side-menu" aria-label="Menu principal">
+            <button class="menu-close" type="button" onclick="closeMenu()">Fermer ✕</button>
+
+            <div>
+                <div class="side-menu-title">Menu</div>
+                <button class="menu-link" type="button" onclick="goHome()">🏠 Retour à l'accueil</button>
+            </div>
+
+            <div>
+                <div class="menu-section-title">Mode de jeu</div>
+                <button class="menu-filter-btn active" type="button" data-promo="all" onclick="setPromoFilter('all')">
+                    Tout le monde
+                </button>
+                <button class="menu-filter-btn" type="button" data-promo="ICM 1A" onclick="setPromoFilter('ICM 1A')">
+                    ICM 1A seulement
+                </button>
+                <button class="menu-filter-btn" type="button" data-promo="ICM 2A" onclick="setPromoFilter('ICM 2A')">
+                    ICM 2A seulement
+                </button>
+                <button class="menu-filter-btn" type="button" data-promo="ICM 3A" onclick="setPromoFilter('ICM 3A')">
+                    ICM 3A seulement
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <main class="card">
+        <div class="glow"></div>
+        <div class="card-content">
+            <header>
+                <div class="brand">
+                    <div class="brand-logo">
+                        <div class="brand-logo-inner">ICM</div>
+                    </div>
+                    <div>
+                        <div class="brand-text-title">Jeu des visages</div>
+                        <div class="brand-text-sub">Trombinoscopes ICM 1A · 2A · 3A</div>
+                    </div>
+                </div>
+
+                <button class="menu-button" type="button" onclick="openMenu()">
+                    <span class="menu-icon"></span>
+                    Menu
+                </button>
+            </header>
+
+            <!-- Accueil -->
+            <section id="homeScreen" class="home">
+                <div class="pill">
+                    <span>🎓 Jeu interne</span>
+                    <span>·</span>
+                    <span>Reconnaître les élèves</span>
+                </div>
+
+                <div>
+                    <h1 class="home-title">Prêt à reconnaître tout le monde&nbsp;?</h1>
+                    <p class="home-sub">
+                        Choisis un <strong>mode de jeu</strong>, puis appuie sur <strong>Jouer</strong>.
+                        Un visage sera affiché au hasard selon la promo sélectionnée.
+                    </p>
+                </div>
+
+                <div class="mode-section">
+                    <div class="mode-section-title">Modes de jeu</div>
+                    <div class="mode-buttons">
+                        <button class="mode-btn active" type="button" data-promo="all" onclick="setPromoFilter('all')">
+                            Tout le monde
+                        </button>
+                        <button class="mode-btn" type="button" data-promo="ICM 1A" onclick="setPromoFilter('ICM 1A')">
+                            ICM 1A seulement
+                        </button>
+                        <button class="mode-btn" type="button" data-promo="ICM 2A" onclick="setPromoFilter('ICM 2A')">
+                            ICM 2A seulement
+                        </button>
+                        <button class="mode-btn" type="button" data-promo="ICM 3A" onclick="setPromoFilter('ICM 3A')">
+                            ICM 3A seulement
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn-primary" type="button" onclick="startGame()">
+                    ▶️ Jouer
+                </button>
+            </section>
+
+            <!-- Zone de jeu -->
+            <section id="gameScreen" class="game" aria-live="polite">
+                <div class="game-image-wrapper">
+                    <div class="portrait-frame">
+                        <div class="portrait-inner">
+                            <img id="studentImage" src="" alt="Portrait élève" style="display:none;" />
+                            <div id="portraitPlaceholder" class="portrait-placeholder">👤</div>
+                        </div>
+                    </div>
+                    <div id="promoTag" class="promo-tag" style="display:none;"></div>
+                </div>
+
+                <div class="game-info">
+                    <div>
+                        <div class="game-title">Qui est-ce&nbsp;?</div>
+                        <p id="modeLabel" class="status" style="margin-top:4px;">
+                            Mode : Tout le monde
+                        </p>
+                        <p style="font-size:13px;color:var(--muted);margin-top:4px;">
+                            Devine la personne affichée, puis clique sur <strong>Révéler</strong>.
+                            Appuie sur <strong>Suivant</strong> pour un nouveau visage.
+                        </p>
+                    </div>
+
+                    <div class="identity">
+                        <div class="identity-label">Identité</div>
+                        <div id="identityValue" class="identity-value identity-placeholder">
+                            Nom · Prénom masqués
+                        </div>
+                        <div id="identityPromo" class="identity-promo"></div>
+                    </div>
+
+                    <div class="game-buttons">
+                        <button id="revealButton" class="btn-secondary" type="button" onclick="revealIdentity()">
+                            👁️ Révéler
+                        </button>
+                        <button class="btn-ghost" type="button" onclick="nextStudent()">
+                            ➡️ Suivant
+                        </button>
+                        <button class="btn-ghost" type="button" onclick="goHome()">
+                            🏠 Accueil
+                        </button>
+                    </div>
+
+                    <p id="statusText" class="status"></p>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<script>
+    /************************************************************
+     * 1. Tableau des élèves
+     * ----------------------------------------------------------
+     * ➜ À TOI :
+     *   - Exporte les photos des trombinoscopes en fichiers JPG/PNG.
+     *   - Place-les dans un dossier (ex: "images/").
+     *   - Mets ici le bon chemin dans la propriété "image".
+     *
+     *   promo = "ICM 1A" ou "ICM 2A" ou "ICM 3A"
+     ************************************************************/
+
+    const students = [
+        // EXEMPLES — ICM 3A
+        {
+            nom: "ABDUL MASSIH",
+            prenom: "Anna Theresa",
+            promo: "ICM 3A",
+            image: "images/icm3a/abdul_massih_anna_theresa.jpg"
+        },
+        {
+            nom: "AKAYAD",
+            prenom: "Noa",
+            promo: "ICM 3A",
+            image: "images/icm3a/akayad_noa.jpg"
+        },
+        {
+            nom: "ALCANTARA PIMENTEL",
+            prenom: "Leticia",
+            promo: "ICM 3A",
+            image: "images/icm3a/alcantara_pimentel_leticia.jpg"
+        },
+
+        // EXEMPLES — ICM 2A
+        {
+            nom: "ABDALLAH",
+            prenom: "Jason",
+            promo: "ICM 2A",
+            image: "images/icm2a/abdallah_jason.jpg"
+        },
+        {
+            nom: "AFLAK",
+            prenom: "Nisrine",
+            promo: "ICM 2A",
+            image: "images/icm2a/aflak_nisrine.jpg"
+        },
+
+        // EXEMPLES — ICM 1A
+        {
+            nom: "AIT LAHCEN",
+            prenom: "Salwa",
+            promo: "ICM 1A",
+            image: "images/icm1a/ait_lahcen_salwa.jpg"
+        },
+        {
+            nom: "ARMAND",
+            prenom: "Arthur",
+            promo: "ICM 1A",
+            image: "images/icm1a/armand_arthur.jpg"
+        }
+
+        // ➜ Recopie ce modèle pour tous les autres élèves…
+    ];
+
+    /************************************************************
+     * 2. Logique du jeu
+     ************************************************************/
+
+    let currentStudent = null;
+    let currentFilter = "all";  // "all", "ICM 1A", "ICM 2A", "ICM 3A"
+    let identityRevealed = false;
+
+    const homeScreen = document.getElementById("homeScreen");
+    const gameScreen = document.getElementById("gameScreen");
+    const imageEl = document.getElementById("studentImage");
+    const placeholderEl = document.getElementById("portraitPlaceholder");
+    const promoTagEl = document.getElementById("promoTag");
+    const identityValueEl = document.getElementById("identityValue");
+    const identityPromoEl = document.getElementById("identityPromo");
+    const statusTextEl = document.getElementById("statusText");
+    const revealButton = document.getElementById("revealButton");
+    const modeLabelEl = document.getElementById("modeLabel");
+
+    function getModeLabel(promo) {
+        switch (promo) {
+            case "ICM 1A":
+                return "Mode : ICM 1A seulement";
+            case "ICM 2A":
+                return "Mode : ICM 2A seulement";
+            case "ICM 3A":
+                return "Mode : ICM 3A seulement";
+            default:
+                return "Mode : Tout le monde";
+        }
+    }
+
+    function filteredStudents() {
+        if (currentFilter === "all") return students;
+        return students.filter(s => s.promo === currentFilter);
+    }
+
+    function pickRandomStudent() {
+        const pool = filteredStudents();
+        if (!pool.length) {
+            currentStudent = null;
+            imageEl.style.display = "none";
+            placeholderEl.style.display = "flex";
+            promoTagEl.style.display = "none";
+            identityValueEl.textContent = "Aucun élève trouvé pour ce mode de jeu.";
+            identityValueEl.classList.remove("identity-placeholder");
+            identityPromoEl.textContent = "";
+            statusTextEl.textContent = "Ajoute des élèves dans le tableau ou choisis un autre mode.";
+            statusTextEl.classList.add("error");
+            revealButton.disabled = true;
+            return;
+        }
+
+        statusTextEl.classList.remove("error");
+        const randomIndex = Math.floor(Math.random() * pool.length);
+        currentStudent = pool[randomIndex];
+
+        // Mettre à jour l'interface
+        if (currentStudent.image) {
+            imageEl.src = currentStudent.image;
+            imageEl.alt = `Portrait de ${currentStudent.prenom} ${currentStudent.nom}`;
+            imageEl.style.display = "block";
+            placeholderEl.style.display = "none";
+        } else {
+            imageEl.style.display = "none";
+            placeholderEl.style.display = "flex";
+        }
+
+        promoTagEl.textContent = currentStudent.promo;
+        promoTagEl.style.display = "inline-flex";
+
+        identityRevealed = false;
+        identityValueEl.textContent = "Nom · Prénom masqués";
+        identityValueEl.classList.add("identity-placeholder");
+        identityPromoEl.textContent = "";
+        revealButton.disabled = false;
+
+        const poolSize = pool.length;
+        const total = students.length;
+        statusTextEl.textContent = `Élèves dans ce mode : ${poolSize} (sur ${total} au total).`;
+        modeLabelEl.textContent = getModeLabel(currentFilter);
+    }
+
+    function startGame() {
+        homeScreen.style.display = "none";
+
+        // Sur mobile on préfère une colonne
+        if (window.innerWidth < 768) {
+            gameScreen.style.display = "flex";
+            gameScreen.style.flexDirection = "column";
+        } else {
+            gameScreen.style.display = "grid";
+        }
+
+        pickRandomStudent();
+    }
+
+    function nextStudent() {
+        pickRandomStudent();
+    }
+
+    function revealIdentity() {
+        if (!currentStudent || identityRevealed) return;
+        identityRevealed = true;
+
+        identityValueEl.textContent = `${currentStudent.prenom} ${currentStudent.nom}`;
+        identityValueEl.classList.remove("identity-placeholder");
+        identityPromoEl.textContent = currentStudent.promo;
+    }
+
+    function goHome() {
+        gameScreen.style.display = "none";
+        homeScreen.style.display = "flex";
+        closeMenu();
+    }
+
+    /************************************************************
+     * 3. Gestion du menu & des modes
+     ************************************************************/
+
+    const sideMenuBackdrop = document.getElementById("sideMenuBackdrop");
+
+    function openMenu() {
+        sideMenuBackdrop.classList.add("open");
+        sideMenuBackdrop.setAttribute("aria-hidden", "false");
+    }
+
+    function closeMenu() {
+        sideMenuBackdrop.classList.remove("open");
+        sideMenuBackdrop.setAttribute("aria-hidden", "true");
+    }
+
+    sideMenuBackdrop.addEventListener("click", (event) => {
+        if (event.target === sideMenuBackdrop) {
+            closeMenu();
+        }
+    });
+
+    function setPromoFilter(promo) {
+        currentFilter = promo;
+
+        // Met à jour les boutons actifs dans le menu
+        document.querySelectorAll(".menu-filter-btn").forEach(btn => {
+            const p = btn.getAttribute("data-promo");
+            if (p === promo) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        });
+
+        // Met à jour les boutons de mode sur l'accueil
+        document.querySelectorAll(".mode-btn").forEach(btn => {
+            const p = btn.getAttribute("data-promo");
+            if (p === promo) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        });
+
+        // Met à jour le label de mode dans la zone de jeu
+        modeLabelEl.textContent = getModeLabel(currentFilter);
+
+        // Si on est dans le jeu, on relance un tirage
+        if (gameScreen.style.display !== "none") {
+            pickRandomStudent();
+        }
+    }
+
+    // Rendre les fonctions accessibles au HTML inline
+    window.startGame = startGame;
+    window.nextStudent = nextStudent;
+    window.revealIdentity = revealIdentity;
+    window.goHome = goHome;
+    window.openMenu = openMenu;
+    window.closeMenu = closeMenu;
+    window.setPromoFilter = setPromoFilter;
+
+    // Ajuste la disposition si on redimensionne la fenêtre
+    window.addEventListener("resize", () => {
+        if (gameScreen.style.display === "none") return;
+        if (window.innerWidth < 768) {
+            gameScreen.style.display = "flex";
+            gameScreen.style.flexDirection = "column";
+        } else {
+            gameScreen.style.display = "grid";
+            gameScreen.style.removeProperty("flex-direction");
+        }
+    });
+</script>
+</body>
+</html>
